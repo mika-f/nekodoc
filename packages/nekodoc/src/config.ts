@@ -40,4 +40,4 @@ const loadConfig = async (
   return { ...config };
 };
 
-export default loadConfig;
+export { findConfig, loadConfig };
