@@ -23,10 +23,10 @@ program
 program
   .command("start")
   .description("start development server")
-  .option("-p, --port", "use specified port (default: 7225)")
-  .option("-h, --host", "use specified host (default: localhost)")
+  .option("-p, --port <port>", "use specified port (default: 7225)")
+  .option("-h, --host <host>", "use specified host (default: localhost)")
   .option(
-    "-c, --config",
+    "-c, --config <config>",
     "path to NekoDoc configuration file (default: `./nekodoc.config.js`)"
   )
   .option("--no-minify", "build website without minimizing JS bundle")
