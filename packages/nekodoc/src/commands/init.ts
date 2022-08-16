@@ -9,6 +9,7 @@ import {
   DEFAULT as TailwindJs,
   HEADER as TailwindHeader,
 } from "../defaults/tailwindcss.js";
+import { isFileExists } from "../fs.js";
 
 type Configuration = Record<string, { header: string; content: unknown }>;
 
@@ -21,14 +22,6 @@ const CONFIGURATIONS: Configuration = {
     header: TailwindHeader,
     content: TailwindJs,
   },
-};
-
-const isFileExists = async (file: string): Promise<boolean> => {
-  try {
-    return (await fs.stat(file)).isFile();
-  } catch {
-    return false;
-  }
 };
 
 const init = async (): Promise<void> => {
