@@ -10,6 +10,7 @@ type BuildOptions = {
   minify: boolean;
   externals: string[];
   write: boolean;
+  watch: boolean;
   incremental: boolean;
   entryPoints: Record<string, string> | string[];
 };
@@ -23,6 +24,7 @@ const getBuildOptions = (options: BuildOptions): EsbuildBuildOptions =>
     bundle: options.bundle,
     outdir: options.outdir,
     external: options.externals,
+    watch: options.watch,
     write: options.write,
     outExtension: {
       ".js": options.minify ? ".min.js" : ".js",

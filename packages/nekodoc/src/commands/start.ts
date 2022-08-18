@@ -9,7 +9,7 @@ import renderAsHtml from "../markdown/renderer.js";
 import transformMarkdown from "../markdown/transform.js";
 import server from "../server/index.js";
 import getRoutings from "../server/routes.js";
-import watch from "../server/watch.js";
+import watcher from "../server/watch.js";
 
 type StartCommandOptions = {
   port?: number;
@@ -19,15 +19,20 @@ type StartCommandOptions = {
 };
 
 const build = async (
-  configuration: NekoDocConfiguration
+  configuration: NekoDocConfiguration,
+  onRebuild: (outputs: Record<string, string>) => void
 ): Promise<Record<string, string>> => {
-  const client = await createClientConfig(configuration);
+  const client = await createClientConfig({
+    mode: "development",
+    cacheDir: configuration.cacheDir,
+    watch: true,
+  });
 
-  logger.info("start compiling client assets...");
+  logger.info("start initial compiling client assets...");
 
-  const outputs = await transform(client);
+  const outputs = await transform(client, onRebuild);
 
-  logger.info("finish compiling client assets");
+  logger.info("finish initial compiling client assets");
 
   return outputs;
 };
@@ -39,7 +44,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
 
   // auto-refresh configuration
   const configPath = await findConfig(process.cwd());
-  const watcher1 = watch(configPath, async (event) => {
+  const watcher1 = watcher(configPath, async (event) => {
     if (event !== "change") return;
 
     logger.info("configuration has been changed, refresh it.");
@@ -47,13 +52,16 @@ const start = async (options: StartCommandOptions): Promise<void> => {
     routings = await getRoutings({ ...configuration });
   });
 
-  const watcher2 = watch(configuration.contentDir, async (event) => {
+  const watcher2 = watcher(configuration.contentDir, async (event) => {
     if (event === "change") return;
 
     routings = await getRoutings({ ...configuration });
   });
 
-  let assets = await build(configuration);
+  let assets = await build(configuration, (outputs) => {
+    logger.info("finish re-building client assets");
+    assets = outputs;
+  });
 
   await server({
     host: opts.host,

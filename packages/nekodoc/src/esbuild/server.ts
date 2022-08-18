@@ -2,24 +2,28 @@ import path from "path";
 
 import type { BuildOptions } from "esbuild";
 
-import { NekoDocConfiguration } from "../defaults/nekodoc-config.js";
 import getBuildOptions from "./preset.js";
 
+type EsbuildServerOptions = {
+  cacheDir: string;
+  watch?: boolean;
+};
+
 const createServerConfig = async (
-  configuration: NekoDocConfiguration
+  options: EsbuildServerOptions
 ): Promise<BuildOptions> => {
   const entries: Record<string, string> = {};
-  const options = getBuildOptions({
+
+  return getBuildOptions({
     bundle: true,
-    outdir: path.join(configuration.cacheDir, "dist", "server"),
+    outdir: path.join(options.cacheDir, "dist", "server"),
     minify: false,
     externals: ["react", "react-dom"],
     write: false,
+    watch: options.watch ?? false,
     incremental: false,
     entryPoints: entries,
   });
-
-  return options;
 };
 
 export default createServerConfig;

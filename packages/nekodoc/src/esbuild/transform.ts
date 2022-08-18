@@ -1,5 +1,5 @@
 import * as logger from "@nekodoc/logger";
-import { build, BuildOptions, Message } from "esbuild";
+import { build, BuildOptions, BuildResult, Message } from "esbuild";
 import path from "path";
 
 const pickup = (name: string, assets: string[]): string | undefined => {
@@ -31,9 +31,49 @@ const printMessages = (messages: Message[]): void => {
 };
 
 const transform = async (
-  options: BuildOptions
+  options: BuildOptions,
+  onRebuild?: (outputs: Record<string, string>) => void
 ): Promise<Record<string, string>> => {
-  const result = await build(options);
+  const collect = (result: BuildResult) => {
+    if (result.outputFiles) {
+      const outputs: Record<string, string> = {};
+
+      // eslint-disable-next-line no-restricted-syntax
+      for (const file of result.outputFiles) {
+        const { path: filename, text } = file;
+
+        const root = `${path.join(process.cwd(), options.outdir!)}\\`;
+        outputs[filename.replace(root, "")] = text;
+      }
+
+      return outputs;
+    }
+
+    return {};
+  };
+
+  const isWatchMode = options.watch;
+  const opts: BuildOptions = {
+    ...options,
+    watch: isWatchMode
+      ? {
+          onRebuild: (err, result) => {
+            if (err) {
+              if (err.errors) printMessages(err.errors);
+              if (err.warnings) printMessages(err.warnings);
+
+              return;
+            }
+
+            if (result) {
+              const outputs = collect(result);
+              if (onRebuild) onRebuild(outputs);
+            }
+          },
+        }
+      : false,
+  };
+  const result = await build(opts);
 
   if (result.errors) {
     printMessages(result.errors);
@@ -43,21 +83,7 @@ const transform = async (
     printMessages(result.warnings);
   }
 
-  if (result.outputFiles) {
-    const outputs: Record<string, string> = {};
-
-    // eslint-disable-next-line no-restricted-syntax
-    for (const file of result.outputFiles) {
-      const { path: filename, text } = file;
-
-      const root = `${path.join(process.cwd(), options.outdir!)}\\`;
-      outputs[filename.replace(root, "")] = text;
-    }
-
-    return outputs;
-  }
-
-  return {};
+  return collect(result);
 };
 
 export { transform, pickup };
