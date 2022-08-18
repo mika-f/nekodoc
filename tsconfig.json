@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "baseUrl": "./",
-    "jsx": "react"
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true
   }
 }
