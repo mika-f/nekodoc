@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import path from "path";
 
 const isFileExists = async (file: string): Promise<boolean> => {
   try {
@@ -8,4 +9,14 @@ const isFileExists = async (file: string): Promise<boolean> => {
   }
 };
 
-export { isFileExists };
+const dirname = (url: string): string => {
+  let { pathname } = new URL(url);
+
+  if (process.platform === "win32") {
+    pathname = pathname.substring(1);
+  }
+
+  return path.dirname(pathname);
+};
+
+export { isFileExists, dirname };
