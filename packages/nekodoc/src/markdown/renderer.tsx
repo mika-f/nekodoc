@@ -20,7 +20,7 @@ const renderAsHtml = async ({
   mdx,
   components,
 }: RenderAsHtmlOptions): Promise<string> => {
-  const jsx = ReactDOM.renderToString(<App />);
+  const jsx = ReactDOM.renderToString(<App mdx={mdx} />);
 
   return `
 <!DOCTYPE html>
@@ -33,7 +33,10 @@ const renderAsHtml = async ({
     ${scripts.map((w) => `<script src="${w}" async defer></script>`)}
   </head>
   <body>
-    <div id="root">${jsx}</div>
+    <div id="nekodoc">${jsx}</div>
+    <script id="__NEKODOC_DATA__">
+      const __NEKODOC_DATA__ = ${JSON.stringify({ frontmatter, mdx })}
+    </script>
   </body>
 </html>
     `;

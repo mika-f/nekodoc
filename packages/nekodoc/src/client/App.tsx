@@ -1,18 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import runtime from "react/jsx-runtime";
 
-const App: React.FC = () => {
-  const [clientMessage, setClientMessage] = useState("");
+type Props = {
+  mdx: string;
+};
 
-  useEffect(() => {
-    setClientMessage("Hello From React");
-  }, []);
+const App: React.FC<Props> = ({ mdx }) => {
+  useEffect(() => {}, []);
 
-  return (
-    <>
-      <h1>Hello World!</h1>
-      <h2>{clientMessage}</h2>
-    </>
-  );
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  return <>{new Function(mdx)({ ...runtime }).default({ components: {} })}</>;
 };
 
 export default App;
