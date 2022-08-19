@@ -24,7 +24,12 @@ const renderAsHtml = async ({
   const context = {} as FilledContext;
 
   const jsx = ReactDOM.renderToString(
-    <App frontmatter={frontmatter} mdx={mdx} context={context} />
+    <App
+      frontmatter={frontmatter}
+      mdx={mdx}
+      components={components}
+      context={context}
+    />
   );
 
   const { helmet } = context;

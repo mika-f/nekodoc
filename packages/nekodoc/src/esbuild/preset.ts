@@ -2,9 +2,10 @@ import autoprefixer from "autoprefixer";
 import postcss from "esbuild-style-plugin";
 import tailwind from "tailwindcss";
 
-import type { BuildOptions as EsbuildBuildOptions } from "esbuild";
+import type { BuildOptions as EsbuildBuildOptions, Format } from "esbuild";
 
 type BuildOptions = {
+  format: Format;
   bundle: boolean;
   outdir: string;
   minify: boolean;
@@ -13,12 +14,14 @@ type BuildOptions = {
   watch: boolean;
   incremental: boolean;
   entryPoints: Record<string, string> | string[];
+  inject?: string[];
 };
 
 const getBuildOptions = (options: BuildOptions): EsbuildBuildOptions =>
   //
   ({
     target: "es2015",
+    format: options.format,
     minify: options.minify,
     jsx: "automatic",
     bundle: options.bundle,
@@ -34,6 +37,7 @@ const getBuildOptions = (options: BuildOptions): EsbuildBuildOptions =>
     assetNames: "[name]-[hash]",
     incremental: options.incremental,
     entryPoints: options.entryPoints,
+    inject: options.inject ?? [],
     plugins: [
       postcss({
         postcss: {

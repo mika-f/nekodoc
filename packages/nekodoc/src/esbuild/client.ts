@@ -9,6 +9,7 @@ type EsbuildClientOptions = {
   cacheDir: string;
   mode: "development" | "production";
   watch?: boolean;
+  inject?: string[];
 };
 
 const createClientConfig = async (
@@ -19,6 +20,7 @@ const createClientConfig = async (
   };
 
   return getBuildOptions({
+    format: "iife",
     bundle: true,
     outdir: path.join(options.cacheDir, "dist", "client"),
     minify: options.mode === "production",
@@ -27,6 +29,7 @@ const createClientConfig = async (
     watch: options.watch ?? false,
     incremental: false,
     entryPoints: entries,
+    inject: options.inject,
   });
 };
 

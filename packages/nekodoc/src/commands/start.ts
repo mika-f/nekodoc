@@ -1,10 +1,17 @@
 import * as logger from "@nekodoc/logger";
-import { join } from "path";
+import fs from "fs/promises";
+import importFresh from "import-fresh";
+import { join, resolve } from "path";
 
 import { findConfig, loadConfig } from "../config.js";
 import { NekoDocConfiguration } from "../defaults/nekodoc-config.js";
 import createClientConfig from "../esbuild/client.js";
+import createServerConfig from "../esbuild/server.js";
 import { transform } from "../esbuild/transform.js";
+import {
+  collectJavaScriptsIntoOne,
+  collectJavaScriptsSeparate,
+} from "../javascript/resources.js";
 import renderAsHtml from "../markdown/renderer.js";
 import transformMarkdown from "../markdown/transform.js";
 import server from "../server/index.js";
@@ -18,21 +25,51 @@ type StartCommandOptions = {
   minify?: boolean;
 };
 
-const build = async (
+const buildClient = async (
   configuration: NekoDocConfiguration,
-  onRebuild: (outputs: Record<string, string>) => void
+  logging: boolean
 ): Promise<Record<string, string>> => {
-  const client = await createClientConfig({
-    mode: "development",
-    cacheDir: configuration.cacheDir,
-    watch: true,
+  if (logging) logger.info("start building client assets");
+
+  const [res, cleanup] = collectJavaScriptsIntoOne({
+    components: configuration.components,
+    layouts: configuration.layouts,
   });
 
-  logger.info("start initial compiling client assets...");
+  const clientConfig = await createClientConfig({
+    mode: "development",
+    cacheDir: configuration.cacheDir,
+    watch: false,
+    inject: [res.app],
+  });
 
-  const outputs = await transform(client, onRebuild);
+  const outputs = await transform(clientConfig);
 
-  logger.info("finish initial compiling client assets");
+  if (logging) logger.info("finish building client assets");
+
+  cleanup();
+
+  return outputs;
+};
+
+const buildServer = async (
+  configuration: NekoDocConfiguration,
+  logging: boolean
+) => {
+  if (logging) logger.info("start building server assets");
+
+  const serverConfig = await createServerConfig({
+    entryPoints: collectJavaScriptsSeparate({
+      components: configuration.components,
+      layouts: configuration.layouts,
+    }),
+    cacheDir: configuration.cacheDir,
+    watch: false,
+  });
+
+  const outputs = await transform(serverConfig);
+
+  if (logging) logger.info("finish building server assets");
 
   return outputs;
 };
@@ -42,14 +79,38 @@ const start = async (options: StartCommandOptions): Promise<void> => {
   let configuration = await loadConfig(process.cwd(), opts.config);
   let routings = await getRoutings({ ...configuration });
 
+  logger.info("NekoDoc server starting...");
+
   // auto-refresh configuration
   const configPath = await findConfig(process.cwd());
+
+  logger.info("start compiling initial client/server assets...");
+
+  let [clientAssets, serverAssets] = await Promise.all([
+    buildClient(configuration, false),
+    buildServer(configuration, false),
+  ]);
+
+  // initial cache
+  let cachedServerAssets = {};
+  let cachedComponents = {};
+
+  logger.info("finish compiling initial client/server assets");
+
   const watcher1 = watcher(configPath, async (event) => {
     if (event !== "change") return;
 
     logger.info("configuration has been changed, refresh it.");
     configuration = await loadConfig(process.cwd(), opts.config);
     routings = await getRoutings({ ...configuration });
+
+    const [ca, sa] = await Promise.all([
+      buildClient(configuration, true),
+      buildServer(configuration, true),
+    ]);
+
+    clientAssets = ca;
+    serverAssets = sa;
   });
 
   const watcher2 = watcher(configuration.contentDir, async (event) => {
@@ -58,17 +119,12 @@ const start = async (options: StartCommandOptions): Promise<void> => {
     routings = await getRoutings({ ...configuration });
   });
 
-  let assets = await build(configuration, (outputs) => {
-    logger.info("finish re-building client assets");
-    assets = outputs;
-  });
-
   await server({
     host: opts.host,
     port: opts.port,
     staticResources: async (path) => {
-      const hasContents = Object.keys(assets).includes(path);
-      if (hasContents) return assets[path];
+      const hasContents = Object.keys(clientAssets).includes(path);
+      if (hasContents) return clientAssets[path];
 
       return undefined;
     },
@@ -76,22 +132,60 @@ const start = async (options: StartCommandOptions): Promise<void> => {
       const hasContents = Object.keys(routings).includes(path);
       if (hasContents) {
         const file = join(configuration.contentDir, routings[path]);
+
         const { frontmatter, mdx } = await transformMarkdown({
           markdown: file,
           rehypePlugins: configuration.rehypePlugins,
           remarkPlugins: configuration.remarkPlugins,
         });
 
-        const assetNames = Object.keys(assets).map((w) => `/_nekodoc/${w}`);
+        const assetNames = Object.keys(clientAssets).map(
+          (w) => `/_nekodoc/${w}`
+        );
         const scripts = assetNames.filter((w) => w.endsWith(".js"));
         const stylesheets = assetNames.filter((w) => w.endsWith(".css"));
+        let components = {};
+
+        if (cachedServerAssets !== serverAssets) {
+          const pkg = resolve(
+            configuration.cacheDir,
+            "dist",
+            "server",
+            "package.json"
+          );
+
+          await fs.writeFile(pkg, JSON.stringify({ type: "module" }));
+
+          // eslint-disable-next-line no-restricted-syntax
+          for (const asset of Object.keys(serverAssets)) {
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
+            const write = resolve(
+              configuration.cacheDir,
+              "dist",
+              "server",
+              asset
+            );
+
+            // eslint-disable-next-line no-await-in-loop
+            await fs.writeFile(write, serverAssets[asset]);
+
+            // eslint-disable-next-line no-await-in-loop
+            const mod = await import(`file://${write}`);
+            components[asset.split("-")[0]] = mod.default;
+          }
+
+          cachedServerAssets = serverAssets;
+          cachedComponents = components;
+        } else {
+          components = cachedComponents;
+        }
 
         return renderAsHtml({
           scripts,
           stylesheets,
           frontmatter,
           mdx,
-          components: {},
+          components,
         });
       }
 
