@@ -49,8 +49,10 @@ ${
     ${helmet.title}
     ${helmet.link}
     ${helmet.style}
-    ${stylesheets.map((w) => `<link rel="stylesheet" href="${w}" />`)}
-    ${scripts.map((w) => `<script src="${w}" async defer></script>`)}
+    ${stylesheets
+      .map((w) => `<link rel="stylesheet" href="${w}" />`)
+      .join("\n")}
+    ${scripts.map((w) => `<script src="${w}" async defer></script>`).join("\n")}
   </head>
   ${
     helmet.bodyAttributes.toString() === ""
