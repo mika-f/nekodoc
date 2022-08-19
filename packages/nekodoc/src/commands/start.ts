@@ -1,6 +1,5 @@
 import * as logger from "@nekodoc/logger";
 import fs from "fs/promises";
-import importFresh from "import-fresh";
 import { join, resolve } from "path";
 
 import { findConfig, loadConfig } from "../config.js";
@@ -23,6 +22,22 @@ type StartCommandOptions = {
   host?: string;
   config?: string;
   minify?: boolean;
+};
+
+const asFiles = (obj: { [dict: string]: string[] }): string[] => {
+  const files: string[] = [];
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const dir of Object.keys(obj)) {
+    const o = obj[dir]; // workaround for invalid prettier formatting
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const file of o) {
+      files.push(join(dir, file));
+    }
+  }
+
+  return files;
 };
 
 const buildClient = async (
@@ -97,12 +112,41 @@ const start = async (options: StartCommandOptions): Promise<void> => {
 
   logger.info("finish compiling initial client/server assets");
 
+  const watchings = collectJavaScriptsSeparate({
+    components: configuration.components,
+    layouts: configuration.layouts,
+  });
+
+  const watcher0 = watcher(Object.values(watchings), async (event) => {
+    if (event !== "change") return;
+
+    logger.info("client/server assets has been changed, re-building it");
+
+    const [ca, sa] = await Promise.all([
+      buildClient(configuration, true),
+      buildServer(configuration, true),
+    ]);
+
+    clientAssets = ca;
+    serverAssets = sa;
+  });
+
   const watcher1 = watcher(configPath, async (event) => {
     if (event !== "change") return;
 
     logger.info("configuration has been changed, refresh it.");
     configuration = await loadConfig(process.cwd(), opts.config);
     routings = await getRoutings({ ...configuration });
+
+    const files = asFiles(watcher0.getWatched());
+    watcher0.unwatch(files);
+
+    const newWatchings = collectJavaScriptsSeparate({
+      components: configuration.components,
+      layouts: configuration.layouts,
+    });
+
+    watcher0.add(Object.values(newWatchings));
 
     const [ca, sa] = await Promise.all([
       buildClient(configuration, true),
@@ -192,6 +236,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
       return `${hasContents}`;
     },
     onClose: () => {
+      watcher0.close();
       watcher1.close();
       watcher2.close();
     },
