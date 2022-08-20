@@ -1,13 +1,13 @@
 # Project: NekoDoc
 
 NekoDoc is a static site generator that focused on project documentation, api documentation, and product documentation.  
-Documentation sources are written in Markdown and Markdown React, and zero-configuration start-up.
+Documentation sources are written in Markdown and MDX, and zero-configuration start-up.
 
-### Features
+## Features
 
 - Zero-configuration startup
 - TailwindCSS included
-- Markdown and Markdown React (MDX) support
+- Markdown and MDX support
 
 ## License
 
