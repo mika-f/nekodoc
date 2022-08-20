@@ -18,7 +18,7 @@ const createServerConfig = async (
     bundle: true,
     outdir: path.join(options.cacheDir, "dist", "server"),
     minify: false,
-    externals: ["react", "react-dom"],
+    externals: ["react", "react-dom", "nekodoc"],
     write: false,
     watch: options.watch ?? false,
     incremental: false,

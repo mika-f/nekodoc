@@ -15,7 +15,7 @@ module.exports = {
     Container: path.resolve(__dirname, "components", "Container.tsx"),
   },
   layouts: {
-    // default: path.resolve(__dirname, "layouts", "DefaultLayout.tsx"),
+    Default: path.resolve(__dirname, "layouts", "DefaultLayout.tsx"),
   },
   tailwind: "tailwind.config.js",
   trailingSlash: true,

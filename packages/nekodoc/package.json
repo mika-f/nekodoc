@@ -2,12 +2,21 @@
   "name": "nekodoc",
   "version": "1.0.0",
   "description": "NekoDoc is a static site generator.",
-  "main": "index.js",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",
   "license": "MIT",
   "private": false,
   "type": "module",
+  "main": "./src/lib/index.js",
+  "types": "./src/lib/index.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./src/lib/index.ts",
+        "default": "./src/lib/index.js"
+      }
+    }
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",

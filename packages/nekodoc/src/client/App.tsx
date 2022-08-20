@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
-import runtime from "react/jsx-runtime";
+import React, { useEffect, useMemo } from "react";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 
 import type { MDXComponents } from "mdx/types";
+
+import AppContext from "./AppContext.js";
+import DefaultLayout from "./DefaultLayout.js";
 
 type Props = {
   frontmatter: Record<string, unknown>;
@@ -12,7 +14,10 @@ type Props = {
 };
 
 const App: React.FC<Props> = ({ frontmatter, mdx, components, context }) => {
-  useEffect(() => {}, []);
+  const value = useMemo(() => ({ mdx, components }), [mdx, components]);
+  const Layout = frontmatter.layout
+    ? (components[frontmatter.layout as string] as any) ?? DefaultLayout
+    : DefaultLayout;
 
   return (
     <HelmetProvider context={context}>
@@ -27,8 +32,9 @@ const App: React.FC<Props> = ({ frontmatter, mdx, components, context }) => {
           )}
         </>
       </Helmet>
-      {/* eslint-disable-next-line @typescript-eslint/no-implied-eval */}
-      {new Function(mdx)({ ...runtime }).default({ components })}
+      <AppContext.Provider value={value}>
+        <Layout />
+      </AppContext.Provider>
     </HelmetProvider>
   );
 };

@@ -44,7 +44,7 @@ const collectJavaScriptsIntoOne = (
 
   // eslint-disable-next-line no-restricted-syntax
   for (const asset of Object.keys(options.layouts)) {
-    lines.push(`import ${asset} from "${options.layouts[asset]}";`);
+    lines.push(`import ${asset} from "${normalize(options.layouts[asset])}";`);
     exports.push(`    ${asset}`);
   }
 
