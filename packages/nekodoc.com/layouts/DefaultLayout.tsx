@@ -10,7 +10,7 @@ type Props = {};
 const DefaultLayout: React.FC<Props> = () => (
   <div className="flex flex-col min-h-screen leading-relaxed">
     <Header />
-    <main className="flex-grow">
+    <main className="flex-grow mb-4">
       <Container>
         <NekoDocContent />
       </Container>
