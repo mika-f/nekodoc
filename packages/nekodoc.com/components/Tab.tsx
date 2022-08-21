@@ -1,16 +1,6 @@
 import React, { useMemo, useState } from "react";
 import TabItem from "./TabItem";
 
-type TabContextProps = {
-  active: string;
-  addTabItem: (title: string, key: string) => void;
-};
-
-const TabContext = React.createContext<TabContextProps>({
-  active: "",
-  addTabItem: () => {},
-});
-
 type Props = {
   children: React.ReactElement;
   defaultActiveKey: string;
@@ -63,4 +53,3 @@ const Tab: React.FC<Props> = ({ defaultActiveKey, children }) => {
 };
 
 export default Tab;
-export { TabContext };
