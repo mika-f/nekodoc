@@ -5,7 +5,7 @@ type Props = {
 };
 
 const Heading1: React.FC<Props> = ({ children }) => (
-  <h1 className="pb-2 mt-4 mb-2 text-2xl border-b border-sky-500">
+  <h1 className="pb-2 mt-8 mb-2 text-3xl border-b border-sky-500">
     {children}
   </h1>
 );

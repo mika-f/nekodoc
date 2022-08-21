@@ -1,0 +1,60 @@
+---
+title: Welcome to NekoDoc!
+description: NekoDoc is a static site generator that focused on project documentation, api documentation, and product documentation.
+layout: Default
+---
+
+# Getting Started
+
+NekoDoc is a tools for creating/development static website.  
+If you are famililar with Node.js and React, you can easy to use NekoDoc!
+
+## Installation
+
+NekoDoc is published to a NPM (and Yarn) registry, and can installed with `yarn` or `npm` command.
+
+<Tab defaultActiveKey="yarn">
+<TabItem tabKey="yarn" title="yarn">
+
+```bash
+$ yarn add nekodoc
+```
+
+</TabItem>
+<TabItem tabKey="npm" title="npm">
+
+```bash
+$ npm install nekodoc --save
+```
+
+</TabItem>
+</Tab>
+
+## Creating your website
+
+After installation, you can bootstrap NekoDoc project using `nekodoc` command.
+
+<Tab defaultActiveKey="yarn">
+<TabItem tabKey="yarn" title="yarn">
+
+```bash
+$ yarn run nekodoc init
+```
+
+</TabItem>
+<TabItem tabKey="npm" title="npm">
+
+```bash
+$ npx nekodoc init
+```
+
+</TabItem>
+</Tab>
+
+This command will create below two files into your current directory.
+
+- `nekodoc.config.js`
+- `tailwind.config.js`
+
+The `nekodoc.config.js` is a configuration file for NekoDoc, otherwise; configuration file for [TailwindCSS](https://tailwindcss.com/).  
+After the creation configuration files, create `index.mdx` into `contents` directory and run `nekodoc start`, you can preview your website at http://localhost:7225.
