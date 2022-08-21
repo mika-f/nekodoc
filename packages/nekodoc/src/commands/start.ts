@@ -204,6 +204,19 @@ const start = async (options: StartCommandOptions): Promise<void> => {
           await fs.writeFile(pkg, JSON.stringify({ type: "module" }));
 
           // eslint-disable-next-line no-restricted-syntax
+          for (const asset of Object.keys(cachedServerAssets)) {
+            const dust = resolve(
+              configuration.cacheDir,
+              "dist",
+              "server",
+              asset
+            );
+
+            // eslint-disable-next-line no-await-in-loop
+            await fs.unlink(dust);
+          }
+
+          // eslint-disable-next-line no-restricted-syntax
           for (const asset of Object.keys(serverAssets)) {
             // eslint-disable-next-line @typescript-eslint/no-implied-eval
             const write = resolve(
