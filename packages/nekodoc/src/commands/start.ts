@@ -1,6 +1,7 @@
 import * as logger from "@nekodoc/logger";
 import fs from "fs/promises";
-import { join, resolve } from "path";
+import { dirname, join, resolve } from "path";
+import mkdirp from "mkdirp";
 
 import { findConfig, loadConfig } from "../config.js";
 import { NekoDocConfiguration } from "../defaults/nekodoc-config.js";
@@ -188,7 +189,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
         );
         const scripts = assetNames.filter((w) => w.endsWith(".js"));
         const stylesheets = assetNames.filter((w) => w.endsWith(".css"));
-        let components = {};
+        let components: Record<string, any> = {};
 
         if (cachedServerAssets !== serverAssets) {
           const pkg = resolve(
@@ -197,6 +198,8 @@ const start = async (options: StartCommandOptions): Promise<void> => {
             "server",
             "package.json"
           );
+
+          await mkdirp(dirname(pkg));
 
           await fs.writeFile(pkg, JSON.stringify({ type: "module" }));
 
