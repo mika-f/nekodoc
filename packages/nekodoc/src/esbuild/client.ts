@@ -25,7 +25,7 @@ const createClientConfig = async (
     outdir: path.join(options.cacheDir, "dist", "client"),
     minify: options.mode === "production",
     externals: [],
-    write: options.mode === "production",
+    write: false,
     watch: options.watch ?? false,
     incremental: false,
     entryPoints: entries,
