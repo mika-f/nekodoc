@@ -1,0 +1,20 @@
+{
+  "name": "@nekodoc/fs-routing",
+  "version": "1.0.0",
+  "description": "NekoDoc file-system routing",
+  "repository": "https://github.com/mika-f/nekodoc",
+  "author": "Natsune Mochizuki",
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "main": "src/index.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.9",
+    "typescript": "^4.7.4"
+  }
+}

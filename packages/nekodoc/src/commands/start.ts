@@ -1,4 +1,5 @@
 import * as logger from "@nekodoc/logger";
+import { getServerRoutings } from "@nekodoc/fs-routing";
 import fs from "fs/promises";
 import { dirname, join, resolve } from "path";
 import mkdirp from "mkdirp";
@@ -15,7 +16,6 @@ import {
 import renderAsHtml from "../markdown/renderer.js";
 import transformMarkdown from "../markdown/transform.js";
 import server from "../server/index.js";
-import getRoutings from "../server/routes.js";
 import watcher from "../server/watch.js";
 
 type StartCommandOptions = {
@@ -93,7 +93,7 @@ const buildServer = async (
 const start = async (options: StartCommandOptions): Promise<void> => {
   const opts = { ...options };
   let configuration = await loadConfig(process.cwd(), opts.config);
-  let routings = await getRoutings({ ...configuration });
+  let routings = await getServerRoutings({ ...configuration });
 
   logger.info("NekoDoc server starting...");
 
@@ -137,7 +137,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
 
     logger.info("configuration has been changed, refresh it.");
     configuration = await loadConfig(process.cwd(), opts.config);
-    routings = await getRoutings({ ...configuration });
+    routings = await getServerRoutings({ ...configuration });
 
     const files = asFiles(watcher0.getWatched());
     watcher0.unwatch(files);
@@ -161,7 +161,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
   const watcher2 = watcher(configuration.contentDir, async (event) => {
     if (event === "change") return;
 
-    routings = await getRoutings({ ...configuration });
+    routings = await getServerRoutings({ ...configuration });
   });
 
   await server({
@@ -218,7 +218,6 @@ const start = async (options: StartCommandOptions): Promise<void> => {
 
           // eslint-disable-next-line no-restricted-syntax
           for (const asset of Object.keys(serverAssets)) {
-            // eslint-disable-next-line @typescript-eslint/no-implied-eval
             const write = resolve(
               configuration.cacheDir,
               "dist",
