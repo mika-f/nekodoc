@@ -1,6 +1,6 @@
 {
   "name": "@nekodoc/fs-routing",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "NekoDoc file-system routing",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",

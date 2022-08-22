@@ -1,6 +1,6 @@
 {
   "name": "nekodoc",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "NekoDoc is a static site generator.",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@mdx-js/mdx": "^2.1.2",
-    "@nekodoc/fs-routing": "*",
-    "@nekodoc/logger": "*",
+    "@nekodoc/fs-routing": "^0.1.0",
+    "@nekodoc/logger": "^0.1.0",
     "autoprefixer": "^10.4.8",
     "chokidar": "^3.5.3",
     "commander": "^9.4.0",
