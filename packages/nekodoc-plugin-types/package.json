@@ -1,6 +1,6 @@
 {
   "name": "@nekodoc/plugin-types",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "NekoDoc TypeScript Type Definitions",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",
