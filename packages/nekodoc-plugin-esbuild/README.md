@@ -7,9 +7,7 @@ This is built-in plugin of NekoDoc.
 
 ```javascript
 // @ nekodoc.config.js
-const ESBuildPlugin = require("@nekodoc/plugin-esbuild");
-
 module.exports = {
-  plugins: [new ESBuildPlugin()],
+  plugins: ["@nekodoc/plugin-esbuild"],
 };
 ```
