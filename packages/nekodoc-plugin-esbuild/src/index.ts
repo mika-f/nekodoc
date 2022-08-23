@@ -46,7 +46,7 @@ const transform = async (
       for (const file of result.outputFiles) {
         const { path: filename, text } = file;
 
-        const root = `${path.join(process.cwd(), options.dist!)}\\`;
+        const root = `${path.join(process.cwd(), options.dist!)}${path.sep}`;
         outputs[filename.replace(root, "")] = text;
       }
 
