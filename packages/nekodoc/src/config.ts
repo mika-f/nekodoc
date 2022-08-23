@@ -1,8 +1,7 @@
+import { isFileExists } from "@nekodoc/fs-utils";
 import * as logger from "@nekodoc/logger";
 import importFresh from "import-fresh";
 import path from "path";
-
-import { isFileExists } from "./fs.js";
 
 import type { NekoDocConfiguration } from "./defaults/nekodoc-config";
 
@@ -37,6 +36,7 @@ const loadConfig = async (
 
   // todo: validate configuration javascript -> how?
   const config = importFresh(configPath) as NekoDocConfiguration;
+  config.plugins = ["@nekodoc/plugin-esbuild", ...config.plugins];
   return { ...config };
 };
 

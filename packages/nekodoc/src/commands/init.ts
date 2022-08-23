@@ -1,5 +1,6 @@
-import * as fs from "fs/promises";
+import { isFileExists } from "@nekodoc/fs-utils";
 import * as logger from "@nekodoc/logger";
+import * as fs from "fs/promises";
 
 import {
   DEFAULT as NekoDocJs,
@@ -9,7 +10,6 @@ import {
   DEFAULT as TailwindJs,
   HEADER as TailwindHeader,
 } from "../defaults/tailwindcss.js";
-import { isFileExists } from "../fs.js";
 
 type Configuration = Record<string, { header: string; content: unknown }>;
 
