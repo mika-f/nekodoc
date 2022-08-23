@@ -1,6 +1,6 @@
 {
   "name": "@nekodoc/plugin-esbuild",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "NekoDoc transformer plugin using esbuild",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",
