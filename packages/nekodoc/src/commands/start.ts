@@ -1,14 +1,14 @@
 import * as logger from "@nekodoc/logger";
 import { getServerRoutings } from "@nekodoc/fs-routing";
+
+import autoprefixer from "autoprefixer";
 import fs from "fs/promises";
-import { dirname, join, resolve } from "path";
 import mkdirp from "mkdirp";
+import { dirname, join, resolve } from "path";
+import tailwindcss from "tailwindcss";
 
 import { findConfig, loadConfig } from "../config.js";
 import { NekoDocConfiguration } from "../defaults/nekodoc-config.js";
-import createClientConfig from "../esbuild/client.js";
-import createServerConfig from "../esbuild/server.js";
-import { transform } from "../esbuild/transform.js";
 import {
   collectJavaScriptsIntoOne,
   collectJavaScriptsSeparate,
@@ -17,6 +17,9 @@ import renderAsHtml from "../markdown/renderer.js";
 import transformMarkdown from "../markdown/transform.js";
 import server from "../server/index.js";
 import watcher from "../server/watch.js";
+import execute from "../plugins/executor.js";
+
+import type { PluginInstance } from "../plugins/instance.js";
 
 type StartCommandOptions = {
   port?: number;
@@ -42,6 +45,7 @@ const asFiles = (obj: { [dict: string]: string[] }): string[] => {
 };
 
 const buildClient = async (
+  context: PluginInstance,
   configuration: NekoDocConfiguration,
   logging: boolean
 ): Promise<Record<string, string>> => {
@@ -51,15 +55,21 @@ const buildClient = async (
     components: configuration.components,
     layouts: configuration.layouts,
   });
+  const runtime = context.getBuildRuntime();
+  if (runtime === undefined) {
+    throw new Error("failed to get build runtime");
+  }
 
-  const clientConfig = await createClientConfig({
+  const outputs = await runtime.callback({
+    side: "client",
     mode: "development",
-    cacheDir: configuration.cacheDir,
+    format: "iife",
+    dist: join(configuration.cacheDir, runtime.id, "client"),
+    entry: { app: res.app },
+    externals: [],
+    postcssPlugins: [tailwindcss, autoprefixer],
     watch: false,
-    inject: [res.app],
   });
-
-  const outputs = await transform(clientConfig);
 
   if (logging) logger.info("finish building client assets");
 
@@ -69,21 +79,30 @@ const buildClient = async (
 };
 
 const buildServer = async (
+  context: PluginInstance,
   configuration: NekoDocConfiguration,
   logging: boolean
 ) => {
   if (logging) logger.info("start building server assets");
 
-  const serverConfig = await createServerConfig({
-    entryPoints: collectJavaScriptsSeparate({
+  const runtime = context.getBuildRuntime();
+  if (runtime === undefined) {
+    throw new Error("failed to get build runtime");
+  }
+
+  const outputs = await runtime.callback({
+    side: "server",
+    mode: "development",
+    format: "esm",
+    dist: join(configuration.cacheDir, runtime.id, "server"),
+    entry: collectJavaScriptsSeparate({
       components: configuration.components,
       layouts: configuration.layouts,
     }),
-    cacheDir: configuration.cacheDir,
+    externals: ["react", "react-dom", "nekodoc"],
+    postcssPlugins: [tailwindcss, autoprefixer],
     watch: false,
   });
-
-  const outputs = await transform(serverConfig);
 
   if (logging) logger.info("finish building server assets");
 
@@ -95,6 +114,8 @@ const start = async (options: StartCommandOptions): Promise<void> => {
   let configuration = await loadConfig(process.cwd(), opts.config);
   let routings = await getServerRoutings({ ...configuration });
 
+  const context = await execute(configuration);
+
   logger.info("NekoDoc server starting...");
 
   // auto-refresh configuration
@@ -103,8 +124,8 @@ const start = async (options: StartCommandOptions): Promise<void> => {
   logger.info("start compiling initial client/server assets...");
 
   let [clientAssets, serverAssets] = await Promise.all([
-    buildClient(configuration, false),
-    buildServer(configuration, false),
+    buildClient(context, configuration, false),
+    buildServer(context, configuration, false),
   ]);
 
   // initial cache
@@ -124,8 +145,8 @@ const start = async (options: StartCommandOptions): Promise<void> => {
     logger.info("client/server assets has been changed, re-building it");
 
     const [ca, sa] = await Promise.all([
-      buildClient(configuration, true),
-      buildServer(configuration, true),
+      buildClient(context, configuration, true),
+      buildServer(context, configuration, true),
     ]);
 
     clientAssets = ca;
@@ -150,8 +171,8 @@ const start = async (options: StartCommandOptions): Promise<void> => {
     watcher0.add(Object.values(newWatchings));
 
     const [ca, sa] = await Promise.all([
-      buildClient(configuration, true),
-      buildServer(configuration, true),
+      buildClient(context, configuration, true),
+      buildServer(context, configuration, true),
     ]);
 
     clientAssets = ca;

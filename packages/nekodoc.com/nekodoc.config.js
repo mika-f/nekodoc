@@ -24,4 +24,5 @@ module.exports = {
   },
   tailwind: "tailwind.config.js",
   trailingSlash: true,
+  plugins: [],
 };

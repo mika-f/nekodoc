@@ -8,6 +8,7 @@ type NekoDocConfiguration = {
   layouts: Record<string, string>;
   tailwind: string;
   trailingSlash: boolean;
+  plugins: string[];
 };
 
 const DEFAULT: NekoDocConfiguration = {
@@ -18,6 +19,7 @@ const DEFAULT: NekoDocConfiguration = {
   layouts: {},
   tailwind: "tailwind.config.js",
   trailingSlash: true,
+  plugins: [],
 };
 
 const HEADER: string = "/* NekoDoc Configuration */";

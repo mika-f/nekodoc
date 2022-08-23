@@ -1,3 +1,4 @@
+import { dirname } from "@nekodoc/fs-utils";
 import fs from "fs/promises";
 import path from "path";
 import tmp from "tmp";
@@ -33,6 +34,13 @@ const collectJavaScriptsIntoOne = (
 ): [Record<string, string>, () => void] => {
   const lines: string[] = [];
   const exports: string[] = [];
+  const main = normalize(
+    path.resolve(
+      path.join(dirname(import.meta.url), "..", "client", "main.tsx")
+    )
+  );
+
+  lines.push(`import run from "${main}";`);
 
   // eslint-disable-next-line no-restricted-syntax
   for (const asset of Object.keys(options.components)) {
@@ -56,6 +64,8 @@ ${lines.join("\n")};
 window.__NEKODOC_COMPONENTS__ = {
 ${exports.join(",\n")}
 };
+
+run();
   `;
 
   fs.writeFile(imports.name, globalImports);

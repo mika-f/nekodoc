@@ -1,9 +1,12 @@
 import * as logger from "@nekodoc/logger";
 import { getHtmlRoutings } from "@nekodoc/fs-routing";
+
+import autoprefixer from "autoprefixer";
 import fs from "fs/promises";
 import plimit from "p-limit";
 import { dirname, join, resolve } from "path";
 import mkdirp from "mkdirp";
+import tailwindcss from "tailwindcss";
 
 import { loadConfig } from "../config.js";
 import { NekoDocConfiguration } from "../defaults/nekodoc-config.js";
@@ -11,11 +14,11 @@ import {
   collectJavaScriptsIntoOne,
   collectJavaScriptsSeparate,
 } from "../javascript/resources.js";
-import createClientConfig from "../esbuild/client.js";
-import createServerConfig from "../esbuild/server.js";
-import { transform } from "../esbuild/transform.js";
 import transformMarkdown from "../markdown/transform.js";
 import renderAsHtml from "../markdown/renderer.js";
+import execute from "../plugins/executor.js";
+
+import type { PluginInstance } from "../plugins/instance.js";
 
 type BuildCommandOptions = {
   config?: string;
@@ -24,6 +27,7 @@ type BuildCommandOptions = {
 };
 
 const buildClient = async (
+  context: PluginInstance,
   configuration: NekoDocConfiguration
 ): Promise<Record<string, string>> => {
   const [res, cleanup] = collectJavaScriptsIntoOne({
@@ -31,44 +35,62 @@ const buildClient = async (
     layouts: configuration.layouts,
   });
 
-  const clientConfig = await createClientConfig({
+  const runtime = context.getBuildRuntime();
+  if (runtime === undefined) {
+    throw new Error("failed to get build runtime");
+  }
+
+  const outputs = await runtime.callback({
+    side: "client",
     mode: "production",
-    cacheDir: configuration.cacheDir,
+    format: "iife",
+    dist: join(configuration.cacheDir, runtime.id, "client"),
+    entry: { app: res.app },
+    externals: [],
+    postcssPlugins: [tailwindcss, autoprefixer],
     watch: false,
-    inject: [res.app],
   });
 
-  const outputs = await transform(clientConfig);
   cleanup();
 
   return outputs;
 };
 
 const buildServer = async (
+  context: PluginInstance,
   configuration: NekoDocConfiguration
 ): Promise<Record<string, string>> => {
-  const serverConfig = await createServerConfig({
-    entryPoints: collectJavaScriptsSeparate({
+  const runtime = context.getBuildRuntime();
+  if (runtime === undefined) throw new Error("failed to get build runtime");
+
+  const outputs = await runtime.callback({
+    side: "server",
+    mode: "production",
+    format: "esm",
+    dist: join(configuration.cacheDir, runtime.id, "server"),
+    entry: collectJavaScriptsSeparate({
       components: configuration.components,
       layouts: configuration.layouts,
     }),
-    cacheDir: configuration.cacheDir,
+    externals: ["react", "react-dom", "nekodoc"],
+    postcssPlugins: [tailwindcss, autoprefixer],
     watch: false,
   });
 
-  return transform(serverConfig);
+  return outputs;
 };
 
 const build = async (options: BuildCommandOptions): Promise<void> => {
   const opts = { outDir: "./dist", ...options };
   const configuration = await loadConfig(process.cwd(), opts.config);
   const routings = await getHtmlRoutings({ ...configuration });
+  const context = await execute(configuration);
 
   logger.info("start building static website...");
 
   const [clientAssets, serverAssets] = await Promise.all([
-    buildClient(configuration),
-    buildServer(configuration),
+    buildClient(context, configuration),
+    buildServer(context, configuration),
   ]);
 
   const pkg = resolve(configuration.cacheDir, "dist", "server", "package.json");
@@ -89,8 +111,6 @@ const build = async (options: BuildCommandOptions): Promise<void> => {
     const mod = await import(`file://${write}`);
     components[asset.split("-")[0]] = mod.default;
   }
-
-  console.log(clientAssets);
 
   const assetNames = Object.keys(clientAssets).map((w) => `/_nekodoc/${w}`);
   const scripts = assetNames.filter((w) => w.endsWith(".js"));

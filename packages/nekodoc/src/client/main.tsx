@@ -12,17 +12,21 @@ declare const __NEKODOC_DATA__: {
   mdx: string;
 };
 
-const hasInjectedData = document.querySelector("#__NEKODOC_DATA__");
-if (hasInjectedData) {
-  const container = document.querySelector("#nekodoc");
-  if (container) {
-    const { frontmatter, mdx } = __NEKODOC_DATA__;
-    // eslint-disable-next-line no-underscore-dangle
-    const components = (window as any).__NEKODOC_COMPONENTS__;
+const run = () => {
+  const hasInjectedData = document.querySelector("#__NEKODOC_DATA__");
+  if (hasInjectedData) {
+    const container = document.querySelector("#nekodoc");
+    if (container) {
+      const { frontmatter, mdx } = __NEKODOC_DATA__;
+      // eslint-disable-next-line no-underscore-dangle
+      const components = (window as any).__NEKODOC_COMPONENTS__;
 
-    ReactDOM.hydrateRoot(
-      container,
-      <App frontmatter={frontmatter} mdx={mdx} components={components} />
-    );
+      ReactDOM.hydrateRoot(
+        container,
+        <App frontmatter={frontmatter} mdx={mdx} components={components} />
+      );
+    }
   }
-}
+};
+
+export default run;

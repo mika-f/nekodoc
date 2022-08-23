@@ -1,0 +1,35 @@
+{
+  "name": "@nekodoc/plugin-esbuild",
+  "version": "0.1.0",
+  "description": "NekoDoc transformer plugin using esbuild",
+  "repository": "https://github.com/mika-f/nekodoc",
+  "author": "Natsune Mochizuki",
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./src/index.ts",
+        "default": "./src/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@nekodoc/fs-utils": "0.1.0",
+    "@nekodoc/logger": "0.1.0",
+    "esbuild": "^0.15.5",
+    "esbuild-style-plugin": "^1.6.0"
+  },
+  "devDependencies": {
+    "@nekodoc/plugin-types": "0.1.0",
+    "@types/node": "^18.7.11",
+    "typescript": "^4.7.4"
+  }
+}

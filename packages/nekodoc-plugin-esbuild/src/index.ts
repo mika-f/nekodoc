@@ -1,20 +1,16 @@
 import * as logger from "@nekodoc/logger";
-import { build, BuildOptions, BuildResult, Message } from "esbuild";
+import { build } from "esbuild";
 import path from "path";
 
-const pickup = (name: string, assets: string[]): string | undefined => {
-  const extension = path.extname(name);
-  const regex = new RegExp(`^${name}(-.*)?\\${extension}$`);
+import type {
+  Assets,
+  PluginInterface,
+  TransformOptions,
+} from "@nekodoc/plugin-types";
+import type { BuildOptions, BuildResult, Message } from "esbuild";
 
-  // eslint-disable-next-line no-restricted-syntax
-  for (const asset of assets) {
-    regex.lastIndex = 0;
-
-    if (regex.test(asset)) return asset;
-  }
-
-  return undefined;
-};
+import createClientConfig from "./client.js";
+import createServerConfig from "./server.js";
 
 const printMessages = (messages: Message[]): void => {
   // eslint-disable-next-line no-restricted-syntax
@@ -23,17 +19,25 @@ const printMessages = (messages: Message[]): void => {
 
     if (location) {
       const loc = `${location.file}@${location.line}:${location.column}`;
-      logger.error(`esbuild compilation error: ${error.text} at ${loc}`);
+      logger.error(`[esbuild] compilation error: ${error.text} at ${loc}`);
     } else {
-      logger.error(`esbuild compilation error: ${error.text}`);
+      logger.error(`[esbuild] compilation error: ${error.text}`);
     }
   }
 };
 
+const getOptions = (options: TransformOptions): BuildOptions => {
+  if (options.side === "client") {
+    return createClientConfig(options);
+  }
+
+  return createServerConfig(options);
+};
+
 const transform = async (
-  options: BuildOptions,
-  onRebuild?: (outputs: Record<string, string>) => void
-): Promise<Record<string, string>> => {
+  options: TransformOptions,
+  onRebuild?: (outputs: Assets) => void
+): Promise<Assets> => {
   const collect = (result: BuildResult) => {
     if (result.outputFiles) {
       const outputs: Record<string, string> = {};
@@ -42,7 +46,7 @@ const transform = async (
       for (const file of result.outputFiles) {
         const { path: filename, text } = file;
 
-        const root = `${path.join(process.cwd(), options.outdir!)}\\`;
+        const root = `${path.join(process.cwd(), options.dist!)}\\`;
         outputs[filename.replace(root, "")] = text;
       }
 
@@ -52,9 +56,9 @@ const transform = async (
     return {};
   };
 
-  const isWatchMode = options.watch;
+  const isWatchMode = !!options.watch;
   const opts: BuildOptions = {
-    ...options,
+    ...getOptions(options),
     watch: isWatchMode
       ? {
           onRebuild: (err, result) => {
@@ -73,6 +77,7 @@ const transform = async (
         }
       : false,
   };
+
   const result = await build(opts);
 
   if (result.errors) {
@@ -86,4 +91,10 @@ const transform = async (
   return collect(result);
 };
 
-export { transform, pickup };
+const plugin: PluginInterface = {
+  load(context) {
+    context.registerTransformer("esbuild", (options) => transform(options));
+  },
+};
+
+export default plugin;
