@@ -1,6 +1,6 @@
 {
   "name": "nekodoc",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "NekoDoc is a static site generator.",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",
