@@ -8,7 +8,7 @@ module.exports = {
     extend: {},
   },
   plugins: [
-    function ({ addComponents }) {
+    ({ addComponents }) => {
       addComponents({
         ".container": {
           maxWidth: "90%",
