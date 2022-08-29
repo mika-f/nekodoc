@@ -87,8 +87,12 @@ const getHtmlRoutings = async (
     if (/index\.mdx?$/.test(name)) {
       name = path.dirname(name);
 
-      if (name !== "/" && options.trailingSlash) {
-        name = `${name}/index.html`;
+      if (name !== "/") {
+        if (options.trailingSlash) {
+          name = `${name}/index.html`;
+        } else {
+          name = `${name}.html`;
+        }
       }
 
       if (name === "/") {
