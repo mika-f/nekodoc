@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 
 import type { MDXComponents } from "mdx/types";
