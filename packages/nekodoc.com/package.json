@@ -4,6 +4,10 @@
   "description": "NekoDoc website.",
   "main": "index.js",
   "license": "MIT",
+  "type": "commonjs",
+  "scripts": {
+    "build": "echo"
+  },
   "dependencies": {
     "nekodoc": "^0.1.1",
     "react": "^18.2.0",

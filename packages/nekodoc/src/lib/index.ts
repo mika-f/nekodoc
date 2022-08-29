@@ -1,4 +1,7 @@
+import type { DefineConfigFn } from "@nekodoc/plugin-types";
+
 import NekoDocContent from "../client/NekoDocContent.js";
 
-// eslint-disable-next-line import/prefer-default-export
-export { NekoDocContent };
+const defineConfig: DefineConfigFn = (args) => args;
+
+export { NekoDocContent, defineConfig };

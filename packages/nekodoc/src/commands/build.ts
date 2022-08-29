@@ -1,6 +1,8 @@
 import * as logger from "@nekodoc/logger";
 import { getHtmlRoutings } from "@nekodoc/fs-routing";
 
+import type { NekoDocConfiguration } from "@nekodoc/plugin-types";
+
 import autoprefixer from "autoprefixer";
 import fs from "fs/promises";
 import plimit from "p-limit";
@@ -9,7 +11,6 @@ import mkdirp from "mkdirp";
 import tailwindcss from "tailwindcss";
 
 import { loadConfig } from "../config.js";
-import { NekoDocConfiguration } from "../defaults/nekodoc-config.js";
 import {
   collectJavaScriptsIntoOne,
   collectJavaScriptsSeparate,
@@ -28,11 +29,11 @@ type BuildCommandOptions = {
 
 const buildClient = async (
   context: PluginInstance,
-  configuration: NekoDocConfiguration
+  configuration: Required<NekoDocConfiguration>
 ): Promise<Record<string, string>> => {
   const [res, cleanup] = collectJavaScriptsIntoOne({
-    components: configuration.components,
-    layouts: configuration.layouts,
+    components: configuration.markdown.components ?? {},
+    layouts: configuration.markdown.layouts ?? {},
   });
 
   const runtime = context.getBuildRuntime();
@@ -44,7 +45,12 @@ const buildClient = async (
     side: "client",
     mode: "production",
     format: "iife",
-    dist: join(configuration.cacheDir, runtime.id, "client"),
+    dist: join(
+      configuration.root,
+      configuration.cacheDir,
+      runtime.id,
+      "client"
+    ),
     entry: { app: res.app },
     externals: [],
     postcssPlugins: [tailwindcss, autoprefixer],
@@ -58,7 +64,7 @@ const buildClient = async (
 
 const buildServer = async (
   context: PluginInstance,
-  configuration: NekoDocConfiguration
+  configuration: Required<NekoDocConfiguration>
 ): Promise<Record<string, string>> => {
   const runtime = context.getBuildRuntime();
   if (runtime === undefined) throw new Error("failed to get build runtime");
@@ -67,10 +73,15 @@ const buildServer = async (
     side: "server",
     mode: "production",
     format: "esm",
-    dist: join(configuration.cacheDir, runtime.id, "server"),
+    dist: join(
+      configuration.root,
+      configuration.cacheDir,
+      runtime.id,
+      "server"
+    ),
     entry: collectJavaScriptsSeparate({
-      components: configuration.components,
-      layouts: configuration.layouts,
+      components: configuration.markdown.components ?? {},
+      layouts: configuration.markdown.layouts ?? {},
     }),
     externals: ["react", "react-dom", "nekodoc"],
     postcssPlugins: [tailwindcss, autoprefixer],
@@ -82,8 +93,13 @@ const buildServer = async (
 
 const build = async (options: BuildCommandOptions): Promise<void> => {
   const opts = { outDir: "./dist", ...options };
-  const configuration = await loadConfig(process.cwd(), opts.config);
-  const routings = await getHtmlRoutings({ ...configuration });
+  const configuration = await loadConfig(process.cwd(), opts.config, {
+    command: "build",
+  });
+  const routings = await getHtmlRoutings({
+    contentDir: join(configuration.root, configuration.contentDir),
+    trailingSlash: configuration.markdown?.trailingSlash,
+  });
   const context = await execute(configuration);
 
   logger.info("start building static website...");
@@ -93,7 +109,13 @@ const build = async (options: BuildCommandOptions): Promise<void> => {
     buildServer(context, configuration),
   ]);
 
-  const pkg = resolve(configuration.cacheDir, "dist", "server", "package.json");
+  const pkg = resolve(
+    configuration.root,
+    configuration.cacheDir,
+    "dist",
+    "server",
+    "package.json"
+  );
   await mkdirp(dirname(pkg));
 
   await fs.writeFile(pkg, JSON.stringify({ type: "module" }));
@@ -102,7 +124,13 @@ const build = async (options: BuildCommandOptions): Promise<void> => {
 
   // eslint-disable-next-line no-restricted-syntax
   for (const asset of Object.keys(serverAssets)) {
-    const write = resolve(configuration.cacheDir, "dist", "server", asset);
+    const write = resolve(
+      configuration.root,
+      configuration.cacheDir,
+      "dist",
+      "server",
+      asset
+    );
 
     // eslint-disable-next-line no-await-in-loop
     await fs.writeFile(write, serverAssets[asset]);
@@ -120,11 +148,15 @@ const build = async (options: BuildCommandOptions): Promise<void> => {
     logger.info(`output routing '${w}' by ${routings[w]}`);
 
     return limit(async () => {
-      const file = join(configuration.contentDir, routings[w]);
+      const file = join(
+        configuration.root,
+        configuration.contentDir,
+        routings[w]
+      );
       const { frontmatter, mdx } = await transformMarkdown({
         markdown: file,
-        rehypePlugins: configuration.rehypePlugins,
-        remarkPlugins: configuration.remarkPlugins,
+        rehypePlugins: configuration.markdown.rehypePlugins ?? [],
+        remarkPlugins: configuration.markdown.remarkPlugins ?? [],
       });
 
       return {
@@ -142,11 +174,15 @@ const build = async (options: BuildCommandOptions): Promise<void> => {
 
   const htmls = await Promise.all(pages);
 
-  await mkdirp(resolve(process.cwd(), opts.outDir));
+  await mkdirp(resolve(configuration.root, opts.outDir));
 
   // eslint-disable-next-line no-restricted-syntax
   for (const html of htmls) {
-    const path = resolve(process.cwd(), opts.outDir, html.route.substring(1));
+    const path = resolve(
+      configuration.root,
+      opts.outDir,
+      html.route.substring(1)
+    );
 
     // eslint-disable-next-line no-await-in-loop
     await mkdirp(dirname(path));
@@ -156,7 +192,7 @@ const build = async (options: BuildCommandOptions): Promise<void> => {
 
   // eslint-disable-next-line no-restricted-syntax
   for (const asset of Object.keys(clientAssets)) {
-    const path = resolve(process.cwd(), opts.outDir, "_nekodoc", asset);
+    const path = resolve(configuration.root, opts.outDir, "_nekodoc", asset);
 
     // eslint-disable-next-line no-await-in-loop
     await mkdirp(dirname(path));

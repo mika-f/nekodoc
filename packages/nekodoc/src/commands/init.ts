@@ -3,10 +3,6 @@ import * as logger from "@nekodoc/logger";
 import * as fs from "fs/promises";
 
 import {
-  DEFAULT as NekoDocJs,
-  HEADER as NekoDocHeader,
-} from "../defaults/nekodoc-config.js";
-import {
   DEFAULT as TailwindJs,
   HEADER as TailwindHeader,
 } from "../defaults/tailwindcss.js";
@@ -14,10 +10,6 @@ import {
 type Configuration = Record<string, { header: string; content: unknown }>;
 
 const CONFIGURATIONS: Configuration = {
-  "nekodoc.config.js": {
-    header: NekoDocHeader,
-    content: NekoDocJs,
-  },
   "tailwind.config.js": {
     header: TailwindHeader,
     content: TailwindJs,

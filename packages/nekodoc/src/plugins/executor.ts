@@ -1,10 +1,10 @@
+import type { NekoDocConfiguration } from "@nekodoc/plugin-types";
+
 import { context, instance, PluginInstance } from "./instance.js";
 import loadPlugin from "./loader.js";
 
-import type { NekoDocConfiguration } from "../defaults/nekodoc-config.js";
-
 const execute = async (
-  configuration: NekoDocConfiguration
+  configuration: Required<NekoDocConfiguration>
 ): Promise<PluginInstance> => {
   const { plugins } = configuration;
 

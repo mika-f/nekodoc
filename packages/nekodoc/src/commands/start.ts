@@ -1,3 +1,4 @@
+// import { find } from "@nekodoc/config";
 import * as logger from "@nekodoc/logger";
 import { getServerRoutings } from "@nekodoc/fs-routing";
 
@@ -7,8 +8,9 @@ import mkdirp from "mkdirp";
 import { dirname, join, resolve } from "path";
 import tailwindcss from "tailwindcss";
 
-import { findConfig, loadConfig } from "../config.js";
-import { NekoDocConfiguration } from "../defaults/nekodoc-config.js";
+import type { NekoDocConfiguration } from "@nekodoc/plugin-types";
+
+import { loadConfig, findConfig } from "../config.js";
 import {
   collectJavaScriptsIntoOne,
   collectJavaScriptsSeparate,
@@ -46,14 +48,14 @@ const asFiles = (obj: { [dict: string]: string[] }): string[] => {
 
 const buildClient = async (
   context: PluginInstance,
-  configuration: NekoDocConfiguration,
+  configuration: Required<NekoDocConfiguration>,
   logging: boolean
 ): Promise<Record<string, string>> => {
   if (logging) logger.info("start building client assets");
 
   const [res, cleanup] = collectJavaScriptsIntoOne({
-    components: configuration.components,
-    layouts: configuration.layouts,
+    components: configuration.markdown.components ?? {},
+    layouts: configuration.markdown.layouts ?? {},
   });
   const runtime = context.getBuildRuntime();
   if (runtime === undefined) {
@@ -64,7 +66,12 @@ const buildClient = async (
     side: "client",
     mode: "development",
     format: "iife",
-    dist: join(configuration.cacheDir, runtime.id, "client"),
+    dist: join(
+      configuration.root,
+      configuration.cacheDir,
+      runtime.id,
+      "client"
+    ),
     entry: { app: res.app },
     externals: [],
     postcssPlugins: [tailwindcss, autoprefixer],
@@ -80,7 +87,7 @@ const buildClient = async (
 
 const buildServer = async (
   context: PluginInstance,
-  configuration: NekoDocConfiguration,
+  configuration: Required<NekoDocConfiguration>,
   logging: boolean
 ) => {
   if (logging) logger.info("start building server assets");
@@ -94,10 +101,15 @@ const buildServer = async (
     side: "server",
     mode: "development",
     format: "esm",
-    dist: join(configuration.cacheDir, runtime.id, "server"),
+    dist: join(
+      configuration.root,
+      configuration.cacheDir,
+      runtime.id,
+      "server"
+    ),
     entry: collectJavaScriptsSeparate({
-      components: configuration.components,
-      layouts: configuration.layouts,
+      components: configuration.markdown.components ?? {},
+      layouts: configuration.markdown.layouts ?? {},
     }),
     externals: ["react", "react-dom", "nekodoc"],
     postcssPlugins: [tailwindcss, autoprefixer],
@@ -111,7 +123,10 @@ const buildServer = async (
 
 const start = async (options: StartCommandOptions): Promise<void> => {
   const opts = { ...options };
-  let configuration = await loadConfig(process.cwd(), opts.config);
+  let configuration = await loadConfig(process.cwd(), opts.config, {
+    command: "start",
+  });
+
   let routings = await getServerRoutings({ ...configuration });
 
   const context = await execute(configuration);
@@ -119,7 +134,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
   logger.info("NekoDoc server starting...");
 
   // auto-refresh configuration
-  const configPath = await findConfig(process.cwd());
+  const configPath = await findConfig(process.cwd(), opts.config);
 
   logger.info("start compiling initial client/server assets...");
 
@@ -135,8 +150,8 @@ const start = async (options: StartCommandOptions): Promise<void> => {
   logger.info("finish compiling initial client/server assets");
 
   const watchings = collectJavaScriptsSeparate({
-    components: configuration.components,
-    layouts: configuration.layouts,
+    components: configuration.markdown.components ?? {},
+    layouts: configuration.markdown.layouts ?? {},
   });
 
   const watcher0 = watcher(Object.values(watchings), async (event) => {
@@ -157,15 +172,17 @@ const start = async (options: StartCommandOptions): Promise<void> => {
     if (event !== "change") return;
 
     logger.info("configuration has been changed, refresh it.");
-    configuration = await loadConfig(process.cwd(), opts.config);
+    configuration = await loadConfig(process.cwd(), opts.config, {
+      command: "start",
+    });
     routings = await getServerRoutings({ ...configuration });
 
     const files = asFiles(watcher0.getWatched());
     watcher0.unwatch(files);
 
     const newWatchings = collectJavaScriptsSeparate({
-      components: configuration.components,
-      layouts: configuration.layouts,
+      components: configuration.markdown.components ?? {},
+      layouts: configuration.markdown.layouts ?? {},
     });
 
     watcher0.add(Object.values(newWatchings));
@@ -179,11 +196,14 @@ const start = async (options: StartCommandOptions): Promise<void> => {
     serverAssets = sa;
   });
 
-  const watcher2 = watcher(configuration.contentDir, async (event) => {
-    if (event === "change") return;
+  const watcher2 = watcher(
+    join(configuration.root, configuration.contentDir),
+    async (event) => {
+      if (event === "change") return;
 
-    routings = await getServerRoutings({ ...configuration });
-  });
+      routings = await getServerRoutings({ ...configuration });
+    }
+  );
 
   await server({
     host: opts.host,
@@ -197,12 +217,16 @@ const start = async (options: StartCommandOptions): Promise<void> => {
     dynamicResource: async (path) => {
       const hasContents = Object.keys(routings).includes(path);
       if (hasContents) {
-        const file = join(configuration.contentDir, routings[path]);
+        const file = join(
+          process.cwd(),
+          configuration.contentDir,
+          routings[path]
+        );
 
         const { frontmatter, mdx } = await transformMarkdown({
           markdown: file,
-          rehypePlugins: configuration.rehypePlugins,
-          remarkPlugins: configuration.remarkPlugins,
+          rehypePlugins: configuration.markdown.rehypePlugins ?? [],
+          remarkPlugins: configuration.markdown.remarkPlugins ?? [],
         });
 
         const assetNames = Object.keys(clientAssets).map(
@@ -214,6 +238,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
 
         if (cachedServerAssets !== serverAssets) {
           const pkg = resolve(
+            configuration.root,
             configuration.cacheDir,
             "dist",
             "server",
@@ -227,6 +252,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
           // eslint-disable-next-line no-restricted-syntax
           for (const asset of Object.keys(cachedServerAssets)) {
             const dust = resolve(
+              configuration.root,
               configuration.cacheDir,
               "dist",
               "server",
@@ -240,6 +266,7 @@ const start = async (options: StartCommandOptions): Promise<void> => {
           // eslint-disable-next-line no-restricted-syntax
           for (const asset of Object.keys(serverAssets)) {
             const write = resolve(
+              configuration.root,
               configuration.cacheDir,
               "dist",
               "server",
