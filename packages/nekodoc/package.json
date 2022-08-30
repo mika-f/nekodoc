@@ -1,25 +1,27 @@
 {
   "name": "nekodoc",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "NekoDoc is a static site generator.",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",
   "license": "MIT",
   "private": false,
   "type": "module",
-  "main": "./src/lib/index.js",
-  "types": "./src/lib/index.ts",
+  "main": "dist/lib/index.js",
+  "types": "src/lib/index.ts",
   "exports": {
     ".": {
       "import": {
         "types": "./src/lib/index.ts",
-        "default": "./src/lib/index.js"
+        "default": "./dist/lib/index.js"
       }
     }
   },
   "scripts": {
+    "clean": "rimraf ./dist",
     "build": "tsc",
     "watch": "tsc --watch",
+    "prepublishOnly": "npm run clean && npm run build || true",
     "nekodoc": "node --loader ts-node/esm bin/nekodoc.ts"
   },
   "bin": {
@@ -27,12 +29,12 @@
   },
   "dependencies": {
     "@mdx-js/mdx": "^2.1.2",
-    "@nekodoc/config-loader": "*",
-    "@nekodoc/fs-routing": "^0.1.1",
-    "@nekodoc/fs-utils": "^0.1.1",
-    "@nekodoc/logger": "^0.1.1",
-    "@nekodoc/plugin-esbuild": "^0.1.2",
-    "@nekodoc/plugin-types": "^0.1.1",
+    "@nekodoc/config-loader": "^0.2.0",
+    "@nekodoc/fs-routing": "^0.2.0",
+    "@nekodoc/fs-utils": "^0.2.0",
+    "@nekodoc/logger": "^0.2.0",
+    "@nekodoc/plugin-esbuild": "^0.2.0",
+    "@nekodoc/plugin-types": "^0.2.0",
     "autoprefixer": "^10.4.8",
     "chokidar": "^3.5.3",
     "commander": "^9.4.0",
@@ -60,6 +62,7 @@
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "@types/tmp": "^0.2.3",
+    "rimraf": "^3.0.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.7.4"
   }

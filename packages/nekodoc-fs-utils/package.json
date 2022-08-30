@@ -1,20 +1,26 @@
 {
   "name": "@nekodoc/fs-utils",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "File System utilities for NekoDoc",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",
   "license": "MIT",
   "private": false,
   "type": "module",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "types": "src/index.ts",
   "scripts": {
+    "clean": "rimraf ./dist",
     "build": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "devDependencies": {
     "@types/node": "^18.7.11",
+    "rimraf": "^3.0.2",
     "typescript": "^4.7.4"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -3,7 +3,9 @@ import { Helmet, HelmetProvider } from "react-helmet-async";
 
 import type { MDXComponents } from "mdx/types";
 
-import AppContext from "./AppContext.js";
+// @ts-expect-error
+// eslint-disable-next-line import/extensions
+import AppContext from "../../dist/client/AppContext.js";
 import DefaultLayout from "./DefaultLayout.js";
 
 type Props = {

@@ -36,7 +36,14 @@ const collectJavaScriptsIntoOne = (
   const exports: string[] = [];
   const main = normalize(
     path.resolve(
-      path.join(dirname(import.meta.url), "..", "client", "main.tsx")
+      path.join(
+        dirname(import.meta.url),
+        "..",
+        "..",
+        "src",
+        "client",
+        "main.tsx"
+      )
     )
   );
 

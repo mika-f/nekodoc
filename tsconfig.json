@@ -3,7 +3,9 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Node",
-    "baseUrl": "./",
+    "baseUrl": ".",
+    "rootDir": ".",
+    "outDir": "./dist",
     "jsx": "react",
     "allowSyntheticDefaultImports": true
   }

@@ -1,3 +1,4 @@
 #!/usr/bin/env node
 
-import "../src/index.js";
+// eslint-disable-next-line import/extensions
+import "../dist/index.js";

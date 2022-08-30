@@ -1,23 +1,29 @@
 {
   "name": "@nekodoc/logger",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "NekoDoc is a static site generator.",
   "repository": "https://github.com/mika-f/nekodoc",
   "author": "Natsune Mochizuki",
   "license": "MIT",
   "private": false,
   "type": "module",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "types": "src/index.ts",
   "scripts": {
+    "clean": "rimraf ./dist",
     "build": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "chalk": "^5.0.1"
   },
   "devDependencies": {
     "@types/node": "^18.7.5",
+    "rimraf": "^3.0.2",
     "typescript": "^4.7.4"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
