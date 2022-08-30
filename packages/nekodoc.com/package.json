@@ -2,13 +2,14 @@
   "name": "@nekodoc/nekodoc.com",
   "version": "1.0.0",
   "description": "NekoDoc website.",
+  "type": "module",
   "main": "index.js",
   "license": "MIT",
-  "type": "commonjs",
   "scripts": {
     "build": "echo"
   },
   "dependencies": {
+    "@nekodoc/plugin-config-ts": "*",
     "nekodoc": "^0.1.1",
     "react": "^18.2.0",
     "react-syntax-highlighter": "^15.5.0"
